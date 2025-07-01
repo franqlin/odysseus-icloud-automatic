@@ -1,13 +1,27 @@
 #!/bin/bash -x
 # Exibir a splash screen com a imagem logo.png por 3 segundos usando yad
-yad --image="logo.png" --timeout=5 --no-buttons --title="Bem-vindo" --text="Chocho Cloud..." --center --undecorated --fixed --skip-taskbar --no-escape &
+yad --image="logo01.png" --timeout=5 --no-buttons --title="Bem-vindo"  --center --undecorated --fixed --skip-taskbar --no-escape &
 
 # Verificar se as dependências estão instaladas
 sleep 5
-if ! command -v zenity &> /dev/null || ! command -v sha256sum &> /dev/null || ! command -v wkhtmltopdf &> /dev/null || ! command -v pandoc &> /dev/null || ! command -v unzip &> /dev/null || ! command -v zip &> /dev/null; then
-    echo "Certifique-se de que zenity, sha256sum, wkhtmltopdf, pandoc, unzip e zip estão instalados."
-    exit 1
-fi
+for dep in zenity sha256sum wkhtmltopdf pandoc unzip zip; do
+  if ! command -v "$dep" &> /dev/null; then
+    echo "$dep não encontrado. Instalando..."
+    if command -v apt-get &> /dev/null; then
+      sudo apt-get update
+      sudo apt-get install -y "$dep"
+    elif command -v dnf &> /dev/null; then
+      sudo dnf install -y "$dep"
+    elif command -v yum &> /dev/null; then
+      sudo yum install -y "$dep"
+    elif command -v pacman &> /dev/null; then
+      sudo pacman -Sy --noconfirm "$dep"
+    else
+      echo "Gerenciador de pacotes não suportado. Instale $dep manualmente."
+      exit 1
+    fi
+  fi
+done
 
 # Obter a pasta de entrada usando zenity
 FOLDER=$(zenity --file-selection --directory --title="Selecione a pasta de entrada")
