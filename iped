@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Caminho fixo para o iped.jar
+IPED_JAR="/opt/iped-4/iped.jar"
+
+# Verifica se o Iped.jar existe
+if [ ! -f "$IPED_JAR" ]; then
+    zenity --error --text="O arquivo Iped.jar não foi encontrado em $IPED_JAR."
+    exit 1
+fi
+
+# Seleciona a pasta com Zenity
+FOLDER=$(zenity --file-selection --directory --title="Selecione a pasta contendo os arquivos")
+
+# Verifica se a pasta foi selecionada
+if [ -z "$FOLDER" ]; then
+    zenity --error --text="Nenhuma pasta selecionada."
+    exit 1
+fi
+
+# Seleciona a pasta de saída com Zenity
+OUTPUT_FOLDER=$(zenity --file-selection --directory --title="Selecione a pasta de saída")
+
+# Verifica se a pasta de saída foi selecionada
+if [ -z "$OUTPUT_FOLDER" ]; then
+    zenity --error --text="Nenhuma pasta de saída selecionada."
+    exit 1
+fi
+
+# Cria a pasta de saída se não existir
+mkdir -p "$OUTPUT_FOLDER"
+
+# Cria uma lista de arquivos .zip, .E01 e .ISO
+FILES=$(find "$FOLDER" -type f \( -name "*.zip" -o -name "*.E01" -o -name "*.ISO" \))
+
+# Verifica se existem arquivos
+if [ -z "$FILES" ]; then
+    zenity --error --text="Nenhum arquivo .zip, .E01 ou .IDO encontrado na pasta selecionada."
+    exit 1
+fi
+
+# Mostra os arquivos coletados em uma caixa de diálogo
+FILE_LIST=$(echo "$FILES" | tr '\n' '\n')
+zenity --info --text="Arquivos coletados:\n\n$FILE_LIST" --width=400 --height=300
+
+# Monta a fila de execução
+for FILE in $FILES; do
+    # Cria uma subpasta com o mesmo nome do arquivo (sem extensão)
+    BASENAME=$(basename "$FILE")
+    SUBFOLDER="$OUTPUT_FOLDER/${BASENAME%.*}"
+    mkdir -p "$SUBFOLDER"
+
+    # Executa o comando com o caminho fixo do Iped.jar
+    java -jar "$IPED_JAR" -d "$FILE" -o "$SUBFOLDER" &
+    wait
+done
+
+# Aguarda todos os processos em segundo plano terminarem
+
+
+
+zenity --info --text="Processamento concluído."
